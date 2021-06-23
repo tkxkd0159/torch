@@ -1,8 +1,11 @@
+import numpy as np
+
 Coord = tuple[int, int]
 class Grid:
     def __init__(self, width, height, start):
         self.width = width
         self.height = height
+        self.start = start
         self.i = start[0]
         self.j = start[1]
 
@@ -89,3 +92,12 @@ class Grid:
                         (2,3):step_cost
                     })
         return g
+
+
+def random_action(action, possible_acions, eps=0.1):
+    p = np.random.random()
+    if p < (1-eps):
+        return action
+    else:
+        return np.random.choice(possible_acions)
+

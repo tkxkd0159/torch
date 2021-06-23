@@ -70,13 +70,3 @@ class MC:
             G = r + self.gamma * G
         states_actions_returns.reverse()
         return states_actions_returns
-
-    @staticmethod
-    def max_dict(dict_):
-        max_key = None
-        max_val = float('-inf')
-        for k,v in dict_.items():
-            if v > max_val:
-                max_val = v
-                max_key = k
-        return max_key, max_val

@@ -1,9 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from kurl.tool import print_values, print_policy
+from kurl.tool import print_values, print_policy, max_dict
 from kurl.dp import DP
 from kurl.mc import MC
+from kurl.td import SARSA, QL
 
 
 
@@ -11,21 +12,21 @@ from kurl.mc import MC
 
 if __name__ == "__main__":
 
-    target = "MC"
-    # while target is None:
-    #     try:
-    #         method = input("Select your algorithms : DP, MC, SARSA, Q, DQ, MCPG, A2C, DDPG \n")
-    #         print(f'You select {method}')
+    target = "Q"
+    while target is None:
+        try:
+            method = input("Select your algorithms : DP, MC, SARSA, Q, DQ, MCPG, A2C, DDPG \n")
+            print(f'You select {method}')
 
-    #         if method not in ("DP", "MC", "SARSA", "Q", "DQ", "MCPG", "A2C", "DDPG"):
-    #             print("test")
-    #             raise ValueError
-    #         else:
-    #             target = method
-    #             break
+            if method not in ("DP", "MC", "SARSA", "Q", "DQ", "MCPG", "A2C", "DDPG"):
+                print("test")
+                raise ValueError
+            else:
+                target = method
+                break
 
-    #     except ValueError:
-    #         print("Please enter a valid option")
+        except ValueError:
+            print("Please enter a valid option")
 
 
 
@@ -65,7 +66,7 @@ if __name__ == "__main__":
 
             deltas.append(biggest_change)
             for state in mymc.policy.keys():
-                mymc.policy[state] = MC.max_dict(mymc.Q[state])[0]
+                mymc.policy[state] = max_dict(mymc.Q[state])[0]
 
         mymc.old_policy.update({(0,3): "G", (1,3): "H"})
         mymc.policy.update({(0,3): "G", (1,3): "H"})
@@ -75,4 +76,19 @@ if __name__ == "__main__":
         plt.show()
 
     elif target == "SARSA":
+        mysarsa = SARSA()
+        mysarsa.do(10000)
+
+
+        mysarsa.policy.update({(0,3): "G", (1,3): "H"})
+        print_policy(None, mysarsa.policy, mysarsa.myenv, "SARSA")
+
+    elif target == "Q":
+        myql = QL()
+        myql.do(10000)
+
+        myql.policy.update({(0,3): "G", (1,3): "H"})
+        print_policy(None, myql.policy, myql.myenv, "Q-learning")
+
+    elif target == "DQ":
         pass
