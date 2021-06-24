@@ -5,14 +5,15 @@ from kurl.tool import print_values, print_policy, max_dict
 from kurl.dp import DP
 from kurl.mc import MC
 from kurl.td import SARSA, QL
-
+from kurl.deepql import agent as dqnagent
+from kurl.mcpg import agent as mcpgagent
 
 
 
 
 if __name__ == "__main__":
 
-    target = "Q"
+    target = "DQ"
     while target is None:
         try:
             method = input("Select your algorithms : DP, MC, SARSA, Q, DQ, MCPG, A2C, DDPG \n")
@@ -91,4 +92,7 @@ if __name__ == "__main__":
         print_policy(None, myql.policy, myql.myenv, "Q-learning")
 
     elif target == "DQ":
-        pass
+        dqnagent.train(load=True, is_learn=True)
+
+    elif target == "MCPG":
+        mcpgagent.train(load=False, is_learn=True)
