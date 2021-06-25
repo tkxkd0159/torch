@@ -15,8 +15,8 @@ class Linear_QNet(nn.Module):
         x = self.linear2(x)
         return x
 
-    def save(self, file_name='dqmodel.pth'):
-        model_folder_path = './torch_model'
+    def save(self, file_name='dqlmodel.pth'):
+        model_folder_path = './model'
         if not os.path.exists(model_folder_path):
             os.makedirs(model_folder_path)
 
@@ -24,8 +24,7 @@ class Linear_QNet(nn.Module):
         torch.save(self.state_dict(), file_name)
 
 
-
-class Trainer:
+class QTrainer:
     def __init__(self, model, lr, gamma):
         self.lr = lr
         self.gamma = gamma
@@ -38,17 +37,14 @@ class Trainer:
         next_state = torch.tensor(next_state, dtype=torch.float)
         action = torch.tensor(action, dtype=torch.long)
         reward = torch.tensor(reward, dtype=torch.float)
-        # (n, x)
 
         if len(state.shape) == 1:
-            # (1, x)
             state = torch.unsqueeze(state, 0)
             next_state = torch.unsqueeze(next_state, 0)
             action = torch.unsqueeze(action, 0)
             reward = torch.unsqueeze(reward, 0)
             done = (done, )
 
-        # predicted Q values with current state
         pred = self.model(state)
 
         target = pred.clone()
@@ -65,3 +61,6 @@ class Trainer:
         loss.backward()
 
         self.optimizer.step()
+
+
+

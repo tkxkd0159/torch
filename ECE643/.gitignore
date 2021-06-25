@@ -1,5 +1,7 @@
 data
 *.docx
+*.zip
+*.tmp
 ### Python ###
 # Byte-compiled / optimized / DLL files
 __pycache__/

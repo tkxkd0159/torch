@@ -5,10 +5,6 @@ from kurl.tool import print_values, print_policy, max_dict
 from kurl.dp import DP
 from kurl.mc import MC
 from kurl.td import SARSA, QL
-from kurl.deepql import agent as dqnagent
-from kurl.mcpg import agent as mcpgagent
-
-
 
 
 if __name__ == "__main__":
@@ -35,7 +31,7 @@ if __name__ == "__main__":
         mydp1 = DP()
         mydp2 = DP()
         mydp1.policy_iteration()
-        mydp2.value_iteration()
+        mydp_changes = mydp2.value_iteration()
 
         print_values(mydp1.values, mydp1.myenv, 'Policy iterations')
         mydp1.old_policy.update({(0,3): "G", (1,3): "H"})
@@ -46,6 +42,10 @@ if __name__ == "__main__":
         mydp2.old_policy.update({(0,3): "G", (1,3): "H"})
         mydp2.policy.update({(0,3): "G", (1,3): "H"})
         print_policy(mydp2.old_policy, mydp2.policy, mydp2.myenv, 'Value iterations')
+
+        plt.plot(mydp_changes)
+        plt.show()
+
 
     elif target == "MC":
         mymc = MC()
@@ -78,21 +78,41 @@ if __name__ == "__main__":
 
     elif target == "SARSA":
         mysarsa = SARSA()
-        mysarsa.do(10000)
+        mysarsa.train(10000)
 
 
         mysarsa.policy.update({(0,3): "G", (1,3): "H"})
         print_policy(None, mysarsa.policy, mysarsa.myenv, "SARSA")
+        plt.plot(mysarsa.deltas)
+        plt.show()
 
     elif target == "Q":
         myql = QL()
-        myql.do(10000)
+        myql.train(10000)
 
         myql.policy.update({(0,3): "G", (1,3): "H"})
         print_policy(None, myql.policy, myql.myenv, "Q-learning")
+        plt.plot(myql.deltas)
+        plt.show()
 
     elif target == "DQ":
-        dqnagent.train(load=True, is_learn=True)
+        from kurl.deepql import agent as dqnagent
+
+        dqnagent.train(load=False, is_learn=True)
 
     elif target == "MCPG":
-        mcpgagent.train(load=False, is_learn=True)
+        from kurl.mcpg import agent as mcpgagent
+
+        mcpgagent.train()
+
+    elif target == "PPO":
+        from kurl.ppo import agent as ppoagent
+
+        ppoagent.train(is_learn=True, log=True)
+
+    elif target == "A2C":
+        from kurl.a2c import agent as a2cagent
+
+        a2cagent.train(is_learn=True, log=True)
+
+
