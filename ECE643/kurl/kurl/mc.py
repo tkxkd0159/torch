@@ -1,7 +1,7 @@
 import numpy as np
 from copy import deepcopy
 
-from kurl.env import Grid
+from kurl.envs.grid import Grid
 
 
 class MC:

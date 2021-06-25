@@ -1,7 +1,7 @@
 from copy import deepcopy
 import numpy as np
 
-from kurl.env import Grid
+from kurl.envs.grid import Grid
 
 class DP:
     def __init__(self):
@@ -61,7 +61,34 @@ class DP:
 
 
     def value_iteration(self):
-        while True:
+        step_changes = []
+        # while True:
+        #     temp = 0
+        #     biggest_change = 0
+        #     for s in self.states:
+        #         old_v = self.values[s]
+
+        #         if s in self.policy:
+        #             new_v = float('-inf')
+
+        #             for a in self.possible_actions:
+        #                 self.myenv.set_state(s)
+        #                 r = self.myenv.move(a)
+
+        #                 v = r + self.gamma * self.values[self.myenv.current_state()]
+        #                 if v > new_v:
+        #                     new_v = v
+        #             self.values[s] = new_v
+        #             biggest_change = max(biggest_change, np.abs(old_v - self.values[s]))
+
+        #     for s in self.states:
+        #         temp += self.values[s]
+        #     step_values.append(temp)
+
+        #     if biggest_change < self.thresh:
+        #         break
+
+        for i in range(100):
             biggest_change = 0
             for s in self.states:
                 old_v = self.values[s]
@@ -72,14 +99,15 @@ class DP:
                     for a in self.possible_actions:
                         self.myenv.set_state(s)
                         r = self.myenv.move(a)
+
                         v = r + self.gamma * self.values[self.myenv.current_state()]
                         if v > new_v:
                             new_v = v
                     self.values[s] = new_v
                     biggest_change = max(biggest_change, np.abs(old_v - self.values[s]))
 
-            if biggest_change < self.thresh:
-                break
+            step_changes.append(biggest_change)
+
 
         for s in self.policy.keys():
             best_a = None
@@ -87,8 +115,11 @@ class DP:
             for a in self.possible_actions:
                 self.myenv.set_state(s)
                 r = self.myenv.move(a)
+
                 v = r + self.gamma * self.values[self.myenv.current_state()]
                 if v > best_value:
                      best_value = v
                      best_a = a
             self.policy[s] = best_a
+
+        return step_changes

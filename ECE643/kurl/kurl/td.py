@@ -1,7 +1,7 @@
 from copy import deepcopy
 import numpy as np
 
-from kurl.env import Grid, random_action
+from kurl.envs.grid import Grid, random_action
 from kurl.tool import max_dict
 
 class SARSA:
@@ -29,7 +29,7 @@ class SARSA:
         self.biggest_change = 0
 
 
-    def do(self, epoch: int):
+    def train(self, epoch: int):
         exploit_factor = 1.0
         for i in range(epoch):
             if i % 100 == 0:
@@ -94,7 +94,7 @@ class QL:
         self.biggest_change = 0
 
 
-    def do(self, epoch):
+    def train(self, epoch):
         exploit_factor = 1.0
         for i in range(epoch):
             if i % 100 == 0:
