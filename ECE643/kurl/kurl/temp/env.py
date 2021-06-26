@@ -5,6 +5,7 @@ import numpy as np
 import pygame
 import gym
 from gym import spaces
+from enum import Enum
 
 Point = namedtuple('Point', 'x, y')
 
@@ -16,6 +17,13 @@ BLUE2 = (0, 100, 255)
 BLACK = (0,0,0)
 YELLOW = (255, 255, 0)
 
+class Direction(Enum):
+    RIGHT = 1
+    LEFT = 2
+    UP = 3
+    DOWN = 4
+
+BLOCK_SIZE = 20
 
 
 class SnakeEnv(gym.Env):
@@ -24,7 +32,7 @@ class SnakeEnv(gym.Env):
         self.w = 640
         self.h = 480
         self.block_size = 20
-        self.speed = 60
+        self.speed = 30
         self.action_space = spaces.Discrete(4)
 
         high = np.ones(12)
@@ -34,7 +42,7 @@ class SnakeEnv(gym.Env):
 
 
     def reset(self):
-        self.direction = 1
+        self.direction = Direction.RIGHT
 
         self.head = Point(self.w/2, self.h/2)
         self.snake = [self.head,
@@ -64,6 +72,8 @@ class SnakeEnv(gym.Env):
             self.reward = 10
             self._place_food()
             reward_given = True
+        else:
+            self.snake.pop()
 
         if self.is_collision() or self.frame_iteration > 100 * len(self.snake):
             done = True
@@ -108,6 +118,7 @@ class SnakeEnv(gym.Env):
         text = self.font.render("Score: " + str(self.score), True, WHITE)
         self.display.blit(text, [0, 0])
         pygame.display.flip()
+        self.clock.tick(self.speed)
 
     def close(self):
         if self.display:
@@ -116,63 +127,50 @@ class SnakeEnv(gym.Env):
 
     def get_state(self):
 
-        # wall check
-        if self.head.y <= self.h / 4:
-            wall_up, wall_down = 1, 0
-        elif self.head.y >= self.h*3 / 4:
-            wall_up, wall_down = 0, 1
-        else:
-            wall_up, wall_down = 0, 0
-        if self.head.x <= self.w / 4:
-            wall_right, wall_left = 0, 1
-        elif self.head.x >= self.h*3 / 4:
-            wall_right, wall_left = 1, 0
-        else:
-            wall_right, wall_left = 0, 0
+        head = self.snake[0]
+        point_l = Point(head.x - 20, head.y)
+        point_r = Point(head.x + 20, head.y)
+        point_u = Point(head.x, head.y - 20)
+        point_d = Point(head.x, head.y + 20)
 
-        # body close
-        body_up = []
-        body_right = []
-        body_down = []
-        body_left = []
-        if len(self.snake) > 3:
-            for body in self.snake[3:]:
-                if self.measure_distance(body) == 20:
-                    if body.y > self.head.y:
-                        body_down.append(1)
-                    elif body.y < self.head.y:
-                        body_up.append(1)
-                    if body.x < self.head.x:
-                        body_left.append(1)
-                    elif body.x > self.head.x:
-                        body_right.append(1)
-
-        if len(body_up) > 0: body_up = 1
-        else: body_up = 0
-        if len(body_right) > 0: body_right = 1
-        else: body_right = 0
-        if len(body_down) > 0: body_down = 1
-        else: body_down = 0
-        if len(body_left) > 0: body_left = 1
-        else: body_left = 0
-
+        dir_l = self.direction == Direction.LEFT
+        dir_r = self.direction == Direction.RIGHT
+        dir_u = self.direction == Direction.UP
+        dir_d = self.direction == Direction.DOWN
 
         state = [
-            int(self.head.y < self.food.y),
-            int(self.head.x < self.food.x),
-            int(self.head.y > self.food.y),
-            int(self.head.x > self.food.x),
-            int(wall_up or body_up),
-            int(wall_right or body_right),
-            int(wall_down or body_down),
-            int(wall_left or body_left),
-            int(self.direction == 0),
-            int(self.direction == 1),
-            int(self.direction == 2),
-            int(self.direction == 3)
+            # Danger straight
+            (dir_r and self.is_collision(point_r)) or
+            (dir_l and self.is_collision(point_l)) or
+            (dir_u and self.is_collision(point_u)) or
+            (dir_d and self.is_collision(point_d)),
+
+            # Danger right
+            (dir_u and self.is_collision(point_r)) or
+            (dir_d and self.is_collision(point_l)) or
+            (dir_l and self.is_collision(point_u)) or
+            (dir_r and self.is_collision(point_d)),
+
+            # Danger left
+            (dir_d and self.is_collision(point_r)) or
+            (dir_u and self.is_collision(point_l)) or
+            (dir_r and self.is_collision(point_u)) or
+            (dir_l and self.is_collision(point_d)),
+
+            # Move direction
+            dir_l,
+            dir_r,
+            dir_u,
+            dir_d,
+
+            # Food location
+            self.food.x < self.head.x,  # food left
+            self.food.x > self.head.x,  # food right
+            self.food.y < self.head.y,  # food up
+            self.food.y > self.head.y  # food down
             ]
 
-        return np.array(state)
+        return np.array(state, dtype=int)
 
     def is_collision(self, pt=None):
         if pt is None:
@@ -194,28 +192,34 @@ class SnakeEnv(gym.Env):
             self._place_food()
 
     def _move(self, action):
-        """
-        action
-            0: right
-            1: down
-            2: left
-            3: up
-        """
+        # [straight, clockwise_turn, anti-clockwise_turn]
 
-        action = int(action) % 4
-        if np.abs(self.direction - action) != 2:
-            self.direction = action
+        clock_wise = [Direction.RIGHT, Direction.DOWN, Direction.LEFT, Direction.UP]
+        idx = clock_wise.index(self.direction)
+
+        if np.array_equal(action, [1, 0, 0]):
+            new_dir = clock_wise[idx] # no change
+        elif np.array_equal(action, [0, 1, 0]):
+            next_idx = (idx + 1) % 4
+            new_dir = clock_wise[next_idx] # right turn r -> d -> l -> u
+        elif np.array_equal(action, [0, 0, 1]):
+            next_idx = (idx - 1) % 4
+            new_dir = clock_wise[next_idx] # left turn r -> u -> l -> d
+        else:
+            raise ValueError("Invalid action")
+
+        self.direction = new_dir
 
         x = self.head.x
         y = self.head.y
-        if self.direction == 0:
-            x += self.block_size
-        elif self.direction == 1:
-            y += self.block_size
-        elif self.direction == 2:
-            x -= self.block_size
-        elif self.direction == 3:
-            y -= self.block_size
+        if self.direction == Direction.RIGHT:
+            x += BLOCK_SIZE
+        elif self.direction == Direction.LEFT:
+            x -= BLOCK_SIZE
+        elif self.direction == Direction.DOWN:
+            y += BLOCK_SIZE
+        elif self.direction == Direction.UP:
+            y -= BLOCK_SIZE
 
         self.head = Point(x, y)
 

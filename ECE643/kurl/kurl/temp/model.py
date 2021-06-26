@@ -7,7 +7,10 @@ import torch.optim as optim
 from torch.distributions import Categorical
 from kurl.temp.env import SnakeEnv
 from kurl.tool import score_plot
+import random
 
+EPS = 0
+NUM = 0
 
 env = SnakeEnv()
 torch.manual_seed(543)
@@ -15,9 +18,9 @@ torch.manual_seed(543)
 class Policy(nn.Module):
     def __init__(self):
         super(Policy, self).__init__()
-        self.affine1 = nn.Linear(12, 128)
+        self.affine1 = nn.Linear(11, 128)
         self.dropout = nn.Dropout(p=0.6)
-        self.affine2 = nn.Linear(128, 4)
+        self.affine2 = nn.Linear(128, 3)
 
         self.saved_log_probs = []
         self.rewards = []
@@ -36,12 +39,15 @@ eps = np.finfo(np.float32).eps.item()
 
 
 def select_action(state):
+    final_move = [0,0,0]
     state = torch.from_numpy(state).float().unsqueeze(0)
     probs = policy(state)
     m = Categorical(probs)
     action = m.sample()
     policy.saved_log_probs.append(m.log_prob(action))
-    return action.item()
+    final_move[action.item()] = 1
+    return final_move
+
 
 
 def finish_episode():
